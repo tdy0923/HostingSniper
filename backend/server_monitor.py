@@ -33,7 +33,7 @@ class ServerMonitor:
         
         self.add_log("INFO", "服务器监控器初始化完成", "monitor")
     
-    def add_subscription(self, plan_code, datacenters=None, notify_available=True, notify_unavailable=False, server_name=None):
+    def add_subscription(self, plan_code, datacenters=None, notify_available=True, notify_unavailable=False, server_name=None, last_status=None, history=None):
         """
         添加服务器订阅
         
@@ -43,20 +43,22 @@ class ServerMonitor:
             notify_available: 是否在有货时提醒
             notify_unavailable: 是否在无货时提醒
             server_name: 服务器友好名称（如"KS-2 | Intel Xeon-D 1540"）
+            last_status: 上次检查的状态字典（用于恢复，避免重复通知）
+            history: 历史记录列表（用于恢复）
         """
         # 检查是否已存在
         existing = next((s for s in self.subscriptions if s["planCode"] == plan_code), None)
         if existing:
-            self.add_log("WARNING", f"订阅已存在: {plan_code}，将更新配置", "monitor")
+            self.add_log("WARNING", f"订阅已存在: {plan_code}，将更新配置（不会重置状态，避免重复通知）", "monitor")
             existing["datacenters"] = datacenters or []
             existing["notifyAvailable"] = notify_available
             existing["notifyUnavailable"] = notify_unavailable
-            # 更新服务器名称（如果提供）
-            if server_name:
-                existing["serverName"] = server_name
+            # 更新服务器名称（总是更新，即使为None也要更新）
+            existing["serverName"] = server_name
             # 确保历史记录字段存在
             if "history" not in existing:
                 existing["history"] = []
+            # ✅ 不重置 lastStatus，保留已知状态，避免重复通知
             return
         
         subscription = {
@@ -64,9 +66,9 @@ class ServerMonitor:
             "datacenters": datacenters or [],
             "notifyAvailable": notify_available,
             "notifyUnavailable": notify_unavailable,
-            "lastStatus": {},  # 记录上次状态
+            "lastStatus": last_status if last_status is not None else {},  # 恢复上次状态或初始化为空
             "createdAt": datetime.now().isoformat(),
-            "history": []  # 历史记录
+            "history": history if history is not None else []  # 恢复历史记录或初始化为空
         }
         
         # 添加服务器名称（如果提供）

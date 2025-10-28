@@ -187,7 +187,9 @@ def load_data():
                                 sub.get('datacenters', []),
                                 sub.get('notifyAvailable', True),
                                 sub.get('notifyUnavailable', False),
-                                sub.get('serverName')  # 恢复服务器名称
+                                sub.get('serverName'),  # 恢复服务器名称
+                                sub.get('lastStatus', {}),  # ✅ 恢复上次状态，避免重复通知
+                                sub.get('history', [])  # ✅ 恢复历史记录
                             )
                     # 恢复已知服务器列表
                     if 'known_servers' in subscriptions_data:

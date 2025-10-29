@@ -491,7 +491,8 @@ class ServerMonitor:
                 dc_display = dc_display_map.get(dc.lower(), dc.upper())
                 message += f"  • {dc_display} ({dc.upper()})\n"
             
-            message += f"\n时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+            message += f"\n⏰ 时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+            message += f"\n\n💡 点击下方按钮可直接下单对应机房！"
             
             # 构建内联键盘按钮（每个机房一个按钮，最多每行2个按钮）
             inline_keyboard = []
@@ -513,7 +514,9 @@ class ServerMonitor:
                     "eri": "🇮🇹 Eri",
                     "lim": "🇵🇱 Lim"
                 }
-                button_text = dc_display_map.get(dc.lower(), dc.upper())
+                # 生成按钮文本，包含机房信息和"一键下单"提示
+                dc_display_short = dc_display_map.get(dc.lower(), dc.upper())
+                button_text = f"{dc_display_short} 一键下单"
                 
                 # 提取配置信息
                 options = config_info.get("options", []) if config_info else []

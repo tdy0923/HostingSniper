@@ -14,6 +14,12 @@ interface PurchaseHistory {
   orderUrl?: string;
   errorMessage?: string;
   purchaseTime: string;
+  price?: {
+    withTax?: number;
+    withoutTax?: number;
+    tax?: number;
+    currencyCode?: string;
+  };
 }
 
 const HistoryPage = () => {
@@ -207,6 +213,17 @@ const HistoryPage = () => {
                   </div>
                 )}
                 
+                {item.price && item.price.withTax !== undefined && (
+                  <div className="text-sm font-medium text-green-400 pt-2 border-t border-cyber-grid/30">
+                    <span className="text-cyber-muted">价格：</span> {item.price.withTax} {item.price.currencyCode || 'EUR'}
+                    {item.price.withoutTax !== undefined && item.price.withoutTax !== item.price.withTax && (
+                      <span className="text-xs text-cyber-text-dimmed ml-1">
+                        (不含税: {item.price.withoutTax} {item.price.currencyCode || 'EUR'})
+                      </span>
+                    )}
+                  </div>
+                )}
+                
                 {item.orderId && (
                   <div className="text-xs text-cyber-text-dimmed">
                     <span className="text-cyber-muted">订单ID：</span> {item.orderId}
@@ -242,6 +259,7 @@ const HistoryPage = () => {
                   <th className="p-4 text-left">服务器</th>
                   <th className="p-4 text-left">数据中心</th>
                   <th className="p-4 text-left">配置选项</th>
+                  <th className="p-4 text-left">价格</th>
                   <th className="p-4 text-left">状态</th>
                   <th className="p-4 text-left">订单 ID</th>
                   <th className="p-4 text-left">购买时间</th>
@@ -262,6 +280,22 @@ const HistoryPage = () => {
                       {item.options && item.options.length > 0 
                         ? <span className="whitespace-normal break-words">{item.options.join(', ')}</span>
                         : '默认配置'}
+                    </td>
+                    <td className="p-4 whitespace-nowrap">
+                      {item.price && item.price.withTax !== undefined ? (
+                        <div>
+                          <div className="font-medium text-green-400">
+                            {item.price.withTax} {item.price.currencyCode || 'EUR'}
+                          </div>
+                          {item.price.withoutTax !== undefined && item.price.withoutTax !== item.price.withTax && (
+                            <div className="text-xs text-cyber-text-dimmed">
+                              不含税: {item.price.withoutTax} {item.price.currencyCode || 'EUR'}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-cyber-text-dimmed">-</span>
+                      )}
                     </td>
                     <td className="p-4 whitespace-nowrap">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${

@@ -827,6 +827,49 @@ def purchase_server(queue_item):
         client.post(f'/order/cart/{cart_id}/assign')
         add_log("INFO", "购物车绑定成功", "purchase")
         
+        # 获取购物车摘要以提取价格信息
+        price_info = None
+        try:
+            add_log("INFO", f"获取购物车 {cart_id} 摘要以提取价格信息", "purchase")
+            cart_summary = client.get(f'/order/cart/{cart_id}/summary')
+            
+            if cart_summary and isinstance(cart_summary, dict):
+                prices_field = cart_summary.get("prices")
+                if isinstance(prices_field, dict):
+                    with_tax_obj = prices_field.get("withTax")
+                    without_tax_obj = prices_field.get("withoutTax")
+                    tax_obj = prices_field.get("tax")
+                    
+                    # 提取货币代码
+                    currency_code = None
+                    if isinstance(with_tax_obj, dict):
+                        currency_code = with_tax_obj.get("currencyCode")
+                    if not currency_code:
+                        currency_code = prices_field.get("currencyCode", "EUR")
+                    
+                    # 安全提取价格值
+                    with_tax = None
+                    without_tax = None
+                    tax = None
+                    
+                    if with_tax_obj is not None:
+                        with_tax = with_tax_obj.get("value") if isinstance(with_tax_obj, dict) else with_tax_obj
+                    if without_tax_obj is not None:
+                        without_tax = without_tax_obj.get("value") if isinstance(without_tax_obj, dict) else without_tax_obj
+                    if tax_obj is not None:
+                        tax = tax_obj.get("value") if isinstance(tax_obj, dict) else tax_obj
+                    
+                    if with_tax is not None or without_tax is not None:
+                        price_info = {
+                            "withTax": with_tax,
+                            "withoutTax": without_tax,
+                            "tax": tax,
+                            "currencyCode": currency_code
+                        }
+                        add_log("INFO", f"成功提取价格信息: 含税={with_tax} {currency_code}, 不含税={without_tax} {currency_code}", "purchase")
+        except Exception as price_error:
+            add_log("WARNING", f"获取价格信息时出错: {str(price_error)}，将继续结账流程", "purchase")
+        
         add_log("INFO", f"对购物车 {cart_id} 执行结账", "purchase")
         checkout_payload = {
             "autoPayWithPreferredPaymentMethod": False, 
@@ -849,6 +892,8 @@ def purchase_server(queue_item):
             existing_history_entry["purchaseTime"] = current_time_iso
             existing_history_entry["attemptCount"] = queue_item["retryCount"]
             existing_history_entry["options"] = queue_item.get("options", [])
+            if price_info:
+                existing_history_entry["price"] = price_info
             add_log("INFO", f"更新抢购历史(成功) 任务ID: {queue_item['id']}", "purchase")
         else:
             history_entry = {
@@ -864,6 +909,8 @@ def purchase_server(queue_item):
                 "purchaseTime": current_time_iso,
                 "attemptCount": queue_item["retryCount"]
             }
+            if price_info:
+                history_entry["price"] = price_info
             purchase_history.append(history_entry)
             add_log("INFO", f"创建抢购历史(成功) 任务ID: {queue_item['id']}", "purchase")
         

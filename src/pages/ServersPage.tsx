@@ -826,20 +826,31 @@ const ServersPage = () => {
       });
 
       if (response.data.success && response.data.price) {
+        const priceInfo = {
+          withTax: response.data.price.prices?.withTax,
+          withoutTax: response.data.price.prices?.withoutTax,
+          currencyCode: response.data.price.prices?.currencyCode || 'EUR'
+        };
+        
+        // 更新状态（保留用于其他用途）
         setServerPrices(prev => ({
           ...prev,
           [planCode]: {
             ...(prev[planCode] || {}),
             [datacenter]: {
               loading: false,
-              price: {
-                withTax: response.data.price.prices?.withTax,
-                withoutTax: response.data.price.prices?.withoutTax,
-                currencyCode: response.data.price.prices?.currencyCode || 'EUR'
-              }
+              price: priceInfo
             }
           }
         }));
+        
+        // 以通知形式显示价格信息
+        const currencySymbol = priceInfo.currencyCode === 'EUR' ? '€' : 
+                             priceInfo.currencyCode === 'USD' ? '$' : 
+                             priceInfo.currencyCode || '€';
+        const priceMessage = `您选定的型号：${planCode}，价格为：${currencySymbol}${priceInfo.withTax.toFixed(2)} ${priceInfo.currencyCode}`;
+        
+        toast.success(priceMessage, { duration: 6000 });
       } else {
         setServerPrices(prev => ({
           ...prev,
@@ -848,6 +859,9 @@ const ServersPage = () => {
             [datacenter]: { loading: false, error: response.data.error || '获取价格失败' }
           }
         }));
+        
+        // 显示错误通知
+        toast.error(`您选定的型号：${planCode}，价格获取失败：${response.data.error || '获取价格失败'}`, { duration: 5000 });
       }
     } catch (error: any) {
       console.error(`获取 ${planCode}@${datacenter} 价格失败:`, error);
@@ -861,6 +875,10 @@ const ServersPage = () => {
           }
         }
       }));
+      
+      // 显示错误通知
+      const errorMsg = error.response?.data?.error || error.message || '获取价格失败';
+      toast.error(`您选定的型号：${planCode}，价格获取失败：${errorMsg}`, { duration: 5000 });
     }
   };
 
@@ -1789,84 +1807,7 @@ const ServersPage = () => {
                       )}
                     </div>
                   </div>
-                  {/* 价格显示 - 显示第一个可用机房的价格 */}
-                  {(() => {
-                    if (!isAuthenticated) return null;
-                    
-                    // 获取第一个可用机房的价格
-                    const availabilityData = availability[server.planCode];
-                    let priceInfo = null;
-                    let datacenterCode = '';
-                    
-                    if (availabilityData) {
-                      const availableDCs = Object.entries(availabilityData)
-                        .filter(([_, status]) => status && status !== 'unavailable' && status !== 'unknown')
-                        .map(([dc, _]) => dc);
-                      
-                      if (availableDCs.length > 0) {
-                        datacenterCode = availableDCs[0];
-                        priceInfo = serverPrices[server.planCode]?.[datacenterCode];
-                      }
-                    }
-                    
-                    // 如果没有可用性数据，尝试从已存在的价格数据中取第一个
-                    if (!priceInfo && serverPrices[server.planCode]) {
-                      const firstDC = Object.keys(serverPrices[server.planCode])[0];
-                      if (firstDC) {
-                        priceInfo = serverPrices[server.planCode][firstDC];
-                        datacenterCode = firstDC;
-                      }
-                    }
-                    
-                    if (!priceInfo) return null;
-                    
-                    if (priceInfo.loading) {
-                      return (
-                        <div className="mt-2 flex items-center gap-1.5 text-xs text-cyber-muted">
-                          <Loader2 size={12} className="animate-spin" />
-                          <span>正在获取价格{datacenterCode ? ` (${datacenterCode.toUpperCase()})` : ''}...</span>
-                        </div>
-                      );
-                    }
-                    
-                    if (priceInfo.error) {
-                      return (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div className="mt-2 text-xs text-yellow-400 cursor-help">
-                              {priceInfo.error}{datacenterCode ? ` (${datacenterCode.toUpperCase()})` : ''}
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>价格获取失败，可能该配置在所选数据中心不可用</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      );
-                    }
-                    
-                    if (priceInfo.price?.withTax) {
-                      const currencySymbol = priceInfo.price.currencyCode === 'EUR' ? '€' : 
-                                           priceInfo.price.currencyCode === 'USD' ? '$' : 
-                                           priceInfo.price.currencyCode || '€';
-                      return (
-                        <div className="mt-2 flex items-center gap-2">
-                          <div className="flex items-center gap-1.5 px-2 py-1 bg-green-500/20 border border-green-500/30 rounded text-xs">
-                            {priceInfo.price.currencyCode === 'EUR' ? <Euro size={12} className="text-green-400" /> : 
-                             priceInfo.price.currencyCode === 'USD' ? <DollarSign size={12} className="text-green-400" /> : null}
-                            <span className="font-bold text-green-400">
-                              {currencySymbol}{priceInfo.price.withTax.toFixed(2)}
-                            </span>
-                            <span className="text-cyber-muted text-[10px]">/月</span>
-                            {datacenterCode && (
-                              <span className="text-cyber-muted text-[9px] ml-1">({datacenterCode.toUpperCase()})</span>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    }
-                    
-                    return null;
-                  })()}
+                  {/* 价格通过通知形式显示，不在页面直接显示 */}
                 </CardHeader>
                 
                 <CardContent className="p-2 sm:p-3">

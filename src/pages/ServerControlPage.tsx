@@ -293,6 +293,9 @@ const ServerControlPage: React.FC = () => {
   const [contactBilling, setContactBilling] = useState('');
   const [loadingChangeContact, setLoadingChangeContact] = useState(false);
   
+  // SPLA 许可证解锁 Windows 安装功能
+  const [loadingUnlockWindows, setLoadingUnlockWindows] = useState(false);
+  
   // 联系人变更请求管理
   interface ContactChangeRequest {
     id: number;
@@ -882,6 +885,86 @@ const ServerControlPage: React.FC = () => {
       showToast({ type: 'error', title: '重装系统失败', message: error.response?.data?.error || error.message });
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+  // 解锁 Windows 安装功能（创建 SPLA OS 许可证）
+  const handleUnlockWindows = async () => {
+    if (!selectedServer) {
+      showToast({ type: 'error', title: '请先选择服务器' });
+      return;
+    }
+
+    const confirmed = await showConfirm({
+      title: '解锁 Windows 安装',
+      message: `确定要解锁服务器 ${selectedServer.name} 的 Windows 系统安装功能吗？`,
+      confirmText: '确认解锁',
+      cancelText: '取消'
+    });
+
+    if (!confirmed) return;
+
+    setLoadingUnlockWindows(true);
+    try {
+      // 先检查是否已有有效的 SPLA OS 许可证
+      try {
+        const checkResponse = await api.get(`/server-control/${selectedServer.serviceName}/spla`);
+        if (checkResponse.data.success && checkResponse.data.splaList) {
+          // 查找有效的 OS 许可证（未被吊销或取消）
+          const validOsLicense = checkResponse.data.splaList.find((spla: any) => {
+            if (spla.type !== 'os') return false;
+            // 检查状态字段，排除已吊销/已取消的状态
+            const status = spla.status?.toLowerCase() || '';
+            // 如果有状态字段且为已吊销/已取消，则视为无效
+            if (status === 'revoked' || status === 'cancelled' || status === 'terminated') {
+              return false;
+            }
+            // 没有状态字段或者状态为有效状态（如 'active', 'ok', ''），则视为有效
+            return true;
+          });
+          
+          if (validOsLicense) {
+            showToast({ 
+              type: 'info', 
+              title: 'Windows 安装已解锁'
+            });
+            setLoadingUnlockWindows(false);
+            return;
+          }
+        }
+      } catch (e) {
+        // 如果获取失败，继续尝试创建
+        console.log('检查 SPLA 许可证失败，继续创建:', e);
+      }
+
+      // 创建 SPLA OS 许可证
+      const response = await api.post(`/server-control/${selectedServer.serviceName}/spla`, {
+        type: 'os',
+        serialNumber: 'W269N-WFGWX-YVC9B-4J6C9-T83GX'
+      });
+
+      if (response.data.success) {
+        showToast({ 
+          type: 'success', 
+          title: '解锁成功', 
+          message: 'Windows 系统安装功能已解锁。请刷新页面后重新打开重装系统功能，选择 Windows Std 系列镜像进行安装。' 
+        });
+      } else {
+        showToast({ 
+          type: 'error', 
+          title: '解锁失败', 
+          message: response.data.error || '未知错误' 
+        });
+      }
+    } catch (error: any) {
+      console.error('解锁 Windows 安装失败:', error);
+      showToast({ 
+        type: 'error', 
+        title: '解锁失败', 
+        message: error.response?.data?.error || error.message || '创建 SPLA 许可证失败' 
+      });
+    } finally {
+      setLoadingUnlockWindows(false);
     }
   };
 
@@ -2066,6 +2149,22 @@ const ServerControlPage: React.FC = () => {
                     重装系统
                   </button>
                   <button
+                    onClick={handleUnlockWindows}
+                    disabled={loadingUnlockWindows}
+                    className="px-4 py-2 bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/30 rounded-lg text-blue-400 hover:from-blue-500/20 hover:to-purple-500/20 transition-all flex items-center gap-2 justify-center disabled:opacity-50">
+                    {loadingUnlockWindows ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        解锁中...
+                      </>
+                    ) : (
+                      <>
+                        <Zap className="w-4 h-4" />
+                        解锁 Windows 安装
+                      </>
+                    )}
+                  </button>
+                  <button
                     onClick={fetchBootModes}
                     disabled={loadingBootModes}
                     className="px-4 py-2 bg-orange-500/10 border border-orange-500/30 rounded-lg text-orange-400 hover:bg-orange-500/20 transition-all flex items-center gap-2 justify-center disabled:opacity-50">
@@ -2793,6 +2892,30 @@ const ServerControlPage: React.FC = () => {
               <p className="text-cyber-muted text-sm mb-4">
                 选择要安装的操作系统模板。此操作将清空服务器所有数据。
               </p>
+
+              {/* Windows 安装提示 */}
+              <div className="mb-4 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <Zap className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <h4 className="text-blue-400 font-medium text-sm mb-2">Windows 系统安装提示</h4>
+                    <ul className="text-cyber-muted text-xs space-y-1.5 leading-relaxed">
+                      <li className="flex items-start gap-2">
+                        <span className="text-blue-400 mt-0.5">•</span>
+                        <span>如果您已解锁 Windows 安装功能，<span className="text-blue-400 font-medium">请刷新网页</span>以获取最新的安装模板列表。</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-blue-400 mt-0.5">•</span>
+                        <span>如果您对 Windows 系统很熟悉，可以根据您的具体需求选择相应的 Windows 版本。</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-blue-400 mt-0.5">•</span>
+                        <span>如果您不是专业玩家，<span className="text-blue-400 font-medium">建议直接选择 Windows Std（标准版）系列</span>，这是最常用且稳定的 Windows 服务器版本。</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
 
               <div className="space-y-4">
                 <div>

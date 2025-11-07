@@ -60,6 +60,7 @@ const QueuePage = () => {
   const [selectedServer, setSelectedServer] = useState<ServerPlan | null>(null);
   const [selectedDatacenters, setSelectedDatacenters] = useState<string[]>([]);
   const [retryInterval, setRetryInterval] = useState<number>(TASK_RETRY_INTERVAL);
+  const [quantity, setQuantity] = useState<number>(1); // 每个数据中心的抢购数量
 
   // Fetch queue items
   const fetchQueueItems = async () => {
@@ -98,28 +99,39 @@ const QueuePage = () => {
       return;
     }
 
+    if (quantity < 1 || quantity > 100) {
+      toast.error("抢购数量必须在 1-100 之间");
+      return;
+    }
+
     let successCount = 0;
     let errorCount = 0;
+    const totalTasks = selectedDatacenters.length * quantity;
 
+    toast.info(`正在创建 ${totalTasks} 个抢购任务...`);
+
+    // 为每个数据中心创建指定数量的独立任务
     for (const dc of selectedDatacenters) {
-    try {
-      await api.post(`/queue`, {
-          planCode: planCodeInput.trim(),
-          datacenter: dc,
-        retryInterval: retryInterval,
-      });
-        successCount++;
-      } catch (error) {
-        console.error(`Error adding ${planCodeInput.trim()} in ${dc} to queue:`, error);
-        errorCount++;
+      for (let i = 0; i < quantity; i++) {
+        try {
+          await api.post(`/queue`, {
+            planCode: planCodeInput.trim(),
+            datacenter: dc,
+            retryInterval: retryInterval,
+          });
+          successCount++;
+        } catch (error) {
+          console.error(`Error adding ${planCodeInput.trim()} in ${dc} (${i + 1}/${quantity}) to queue:`, error);
+          errorCount++;
+        }
       }
     }
 
     if (successCount > 0) {
-      toast.success(`${successCount}个任务已成功添加到抢购队列`);
+      toast.success(`${successCount}/${totalTasks} 个任务已成功添加到抢购队列`);
     }
     if (errorCount > 0) {
-      toast.error(`${errorCount}个任务添加到抢购队列失败`);
+      toast.error(`${errorCount}/${totalTasks} 个任务添加失败`);
     }
 
     if (successCount > 0 || errorCount === 0) {
@@ -128,6 +140,7 @@ const QueuePage = () => {
       setPlanCodeInput("");
       setSelectedDatacenters([]);
       setRetryInterval(TASK_RETRY_INTERVAL);
+      setQuantity(1);
     }
   };
 
@@ -239,6 +252,17 @@ const QueuePage = () => {
     );
   };
 
+  // 全选数据中心
+  const selectAllDatacenters = () => {
+    const allDcCodes = OVH_DATACENTERS.map(dc => dc.code);
+    setSelectedDatacenters(allDcCodes);
+  };
+
+  // 取消全选数据中心
+  const deselectAllDatacenters = () => {
+    setSelectedDatacenters([]);
+  };
+
   return (
     <div className="space-y-4 sm:space-y-6">
       <div>
@@ -302,6 +326,34 @@ const QueuePage = () => {
                 />
               </div>
               <div>
+                <label htmlFor="quantity" className="block text-sm font-medium text-cyber-secondary mb-1">
+                  每个数据中心抢购数量
+                  <span className="text-xs text-cyber-muted ml-2">
+                    每台服务器单独成单
+                  </span>
+                </label>
+                <input
+                  type="number"
+                  id="quantity"
+                  value={quantity}
+                  onChange={(e) => {
+                    const value = Number(e.target.value);
+                    if (value >= 1 && value <= 100) {
+                      setQuantity(value);
+                    } else {
+                      toast.warning("抢购数量必须在 1-100 之间");
+                    }
+                  }}
+                  min={1}
+                  max={100}
+                  className="w-full cyber-input bg-cyber-surface text-cyber-text border-cyber-border focus:ring-cyber-primary focus:border-cyber-primary"
+                  placeholder="默认: 1台"
+                />
+                <p className="text-xs text-cyber-muted mt-1">
+                  💡 例如：选择3个数据中心，数量填10，将创建30个独立订单（每个数据中心10台）
+                </p>
+              </div>
+              <div>
                 <label htmlFor="retryInterval" className="block text-sm font-medium text-cyber-secondary mb-1">
                   抢购失败后重试间隔 (秒)
                   <span className="text-xs text-cyber-muted ml-2">
@@ -337,7 +389,25 @@ const QueuePage = () => {
 
             {/* Right Column: Datacenter Selection */}
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-cyber-secondary mb-2">选择数据中心 (可选)</label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-cyber-secondary">选择数据中心 (可选)</label>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={selectAllDatacenters}
+                    className="px-2 py-1 text-xs bg-cyber-accent/10 hover:bg-cyber-accent/20 text-cyber-accent border border-cyber-accent/30 hover:border-cyber-accent/50 rounded transition-all"
+                  >
+                    全选
+                  </button>
+                  <button
+                    type="button"
+                    onClick={deselectAllDatacenters}
+                    className="px-2 py-1 text-xs bg-cyber-grid/10 hover:bg-cyber-grid/20 text-cyber-muted hover:text-cyber-text border border-cyber-accent/20 hover:border-cyber-accent/40 rounded transition-all"
+                  >
+                    取消全选
+                  </button>
+                </div>
+              </div>
               <div className="h-48 p-3 bg-cyber-surface border border-cyber-border rounded-md overflow-y-auto grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2 custom-scrollbar">
                 {OVH_DATACENTERS.sort((a, b) => a.name.localeCompare(b.name)).map(dc => (
                   <div key={dc.code} className="flex items-center">
@@ -360,9 +430,14 @@ const QueuePage = () => {
           <button
             onClick={addQueueItem}
             className="w-full cyber-button bg-cyber-primary hover:bg-cyber-primary-dark text-white font-semibold py-2.5"
-            disabled={!planCodeInput.trim()}
+            disabled={!planCodeInput.trim() || selectedDatacenters.length === 0}
           >
-            添加到队列
+            {selectedDatacenters.length > 0 && quantity > 1 
+              ? `添加到队列（将创建 ${selectedDatacenters.length * quantity} 个独立任务）`
+              : selectedDatacenters.length > 0 && quantity === 1
+              ? `添加到队列（${selectedDatacenters.length} 个任务）`
+              : '添加到队列'
+            }
           </button>
         </div>
       )}

@@ -62,20 +62,9 @@ const globalStyles = `
   position: relative;
   -webkit-transform: translate3d(0,0,0);
   transform: translate3d(0,0,0);
-  transition: none !important;
   -webkit-tap-highlight-color: transparent;
   -webkit-user-select: none;
   user-select: none;
-}
-
-.dc-item-selected {
-  background: rgba(100, 255, 218, 0.2) !important;
-  border: 1px solid rgb(100, 255, 218) !important;
-}
-
-.dc-item-unselected {
-  background: rgba(30, 41, 59, 0.6) !important;
-  border: 1px solid rgb(51, 65, 85) !important;
 }
 `;
 
@@ -1544,15 +1533,15 @@ const ServersPage = () => {
     
     // 渲染分组选项
     return (
-      <div className="space-y-3 mt-3">
+      <div className="space-y-2 mt-2">
         {filteredDefaultOptions.length > 0 && (
           <div className="rounded-md overflow-hidden border border-cyber-accent/20">
-            <div className="px-2.5 py-1.5 bg-cyber-grid/20 border-b border-cyber-accent/20 flex items-center">
-              <ArrowRightLeft size={13} className="mr-1.5 text-cyber-accent" />
-              <span className="text-xs font-medium">默认配置</span>
+            <div className="px-2 py-1 bg-cyber-grid/20 border-b border-cyber-accent/20 flex items-center">
+              <ArrowRightLeft size={11} className="mr-1 text-cyber-accent" />
+              <span className="text-[11px] font-medium">默认配置</span>
             </div>
-            <div className="bg-cyber-grid/5 p-2">
-              <div className="grid grid-cols-2 gap-1.5">
+            <div className="bg-cyber-grid/5 p-1.5">
+              <div className="grid grid-cols-2 gap-1">
                 {filteredDefaultOptions.map(option => {
                   // 确定此选项属于哪个组
                   let groupName = "其他";
@@ -1568,10 +1557,10 @@ const ServersPage = () => {
                   return (
                     <div
                       key={option.value}
-                      className="flex flex-col bg-cyber-accent/10 px-2 py-1.5 rounded text-xs border border-cyber-accent/20 min-h-[2.5rem]"
+                      className="flex flex-col bg-cyber-accent/10 px-1.5 py-1 rounded text-xs border border-cyber-accent/20 min-h-[2rem]"
                     >
-                      <span className="font-medium text-xs leading-tight">{displayLabel}</span>
-                      <span className="text-cyber-muted font-mono text-[9px] mt-0.5 leading-tight truncate">{detailLabel}</span>
+                      <span className="font-medium text-[11px] leading-tight">{displayLabel}</span>
+                      <span className="text-cyber-muted font-mono text-[8px] mt-0.5 leading-tight truncate">{detailLabel}</span>
                     </div>
                   );
                 })}
@@ -1583,9 +1572,9 @@ const ServersPage = () => {
         {/* 只有当可选配置和默认配置不一致时才显示可选配置区域 */}
         {!optionsIdentical && hasGroupedOptions && (
           <div className="rounded-md overflow-hidden border border-cyber-accent/20">
-            <div className="px-2.5 py-1.5 bg-cyber-grid/20 border-b border-cyber-accent/20 flex items-center">
-              <Settings size={13} className="mr-1.5 text-cyber-accent" />
-              <span className="text-xs font-medium">自定义配置</span>
+            <div className="px-2 py-1 bg-cyber-grid/20 border-b border-cyber-accent/20 flex items-center">
+              <Settings size={11} className="mr-1 text-cyber-accent" />
+              <span className="text-[11px] font-medium">自定义配置</span>
             </div>
             <div className="divide-y divide-cyber-accent/10">
               {Object.entries(optionGroups).map(([groupName, options]) => {
@@ -1600,12 +1589,12 @@ const ServersPage = () => {
                 else if (groupName === "vRack内网") GroupIcon = ArrowRightLeft;
                 
                 return (
-                  <div key={groupName} className="p-2">
-                    <div className="font-medium text-[11px] mb-1.5 flex items-center text-cyber-accent">
-                      <GroupIcon size={12} className="mr-1" />
+                  <div key={groupName} className="p-1.5">
+                    <div className="font-medium text-[10px] mb-1 flex items-center text-cyber-accent">
+                      <GroupIcon size={11} className="mr-0.5" />
                       {groupName}
                     </div>
-                    <div className="space-y-1 pl-0.5">
+                    <div className="space-y-0.5 pl-0.5">
                       {options.map(option => {
                         const { displayLabel, detailLabel } = formatOptionDisplay(option, groupName);
                         const isSelected = isOptionSelected(server.planCode, option.value);
@@ -1613,30 +1602,30 @@ const ServersPage = () => {
                         return (
                           <div key={option.value} className="flex items-center">
                             <label 
-                              className={`flex items-center justify-between px-2 py-1.5 rounded cursor-pointer transition-colors w-full
+                              className={`flex items-center justify-between px-1.5 py-1 rounded cursor-pointer transition-colors w-full
                                 ${isSelected 
                                   ? 'bg-cyber-accent/15 border border-cyber-accent/30' 
                                   : 'hover:bg-cyber-grid/10 border border-transparent'}`}
                             >
                               <div className="flex items-center min-w-0">
-                                <div className="relative mr-1.5 flex items-center justify-center w-4 h-4 flex-shrink-0">
+                                <div className="relative mr-1 flex items-center justify-center w-3.5 h-3.5 flex-shrink-0">
                                 <input
                                   type="checkbox"
                                   checked={isSelected}
                                   onChange={() => toggleOption(server.planCode, option.value, groupName)}
                                     className="opacity-0 absolute w-full h-full cursor-pointer"
                                   />
-                                  <div className={`w-4 h-4 border rounded-sm flex items-center justify-center ${isSelected ? 'border-cyber-accent bg-cyber-accent/30' : 'border-slate-500'}`}>
+                                  <div className={`w-3.5 h-3.5 border rounded-sm flex items-center justify-center ${isSelected ? 'border-cyber-accent bg-cyber-accent/30' : 'border-slate-500'}`}>
                                     {isSelected && (
-                                      <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-cyber-accent">
+                                      <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-cyber-accent">
                                         <polyline points="20 6 9 17 4 12"></polyline>
                                       </svg>
                                     )}
                                   </div>
                                 </div>
                                 <div className="flex flex-col min-w-0">
-                                  <span className="text-xs font-medium truncate">{displayLabel}</span>
-                                  <span className="text-[10px] text-cyber-muted font-mono truncate">{detailLabel}</span>
+                                  <span className="text-[11px] font-medium truncate">{displayLabel}</span>
+                                  <span className="text-[9px] text-cyber-muted font-mono truncate">{detailLabel}</span>
                                 </div>
                               </div>
                             </label>
@@ -1654,9 +1643,9 @@ const ServersPage = () => {
         {/* 显示已选配置的摘要 */}
         {selectedOptions[server.planCode]?.length > 0 && 
          !selectedOptions[server.planCode].every(opt => server.defaultOptions.map(o => o.value).includes(opt)) && (
-          <div className="mt-2 p-1.5 bg-cyber-accent/10 border border-cyber-accent/30 rounded-md">
-            <div className="text-[10px] font-medium text-cyber-accent mb-1 flex items-center">
-              <CheckSquare size={12} className="mr-1" />
+          <div className="mt-1.5 p-1.5 bg-cyber-accent/10 border border-cyber-accent/30 rounded-md">
+            <div className="text-[9px] font-medium text-cyber-accent mb-0.5 flex items-center">
+              <CheckSquare size={10} className="mr-0.5" />
               已选自定义配置
             </div>
             <div className="flex flex-wrap gap-1">
@@ -1675,7 +1664,7 @@ const ServersPage = () => {
                 const { displayLabel } = formatOptionDisplay(option, groupName);
                 
                 return (
-                  <div key={optValue} className="px-1.5 py-0.5 bg-cyber-accent/20 rounded text-[10px] flex items-center">
+                  <div key={optValue} className="px-1.5 py-0.5 bg-cyber-accent/20 rounded text-[9px] flex items-center">
                     {displayLabel}
                     <button 
                       onClick={(e) => {
@@ -1683,9 +1672,9 @@ const ServersPage = () => {
                         e.stopPropagation();
                         toggleOption(server.planCode, optValue);
                       }} 
-                      className="ml-1.5 text-cyber-muted hover:text-cyber-accent"
+                      className="ml-1 text-cyber-muted hover:text-cyber-accent"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
                         <line x1="6" y1="6" x2="18" y2="18"></line>
                       </svg>
@@ -1984,22 +1973,22 @@ const ServersPage = () => {
                           <span className="hidden sm:inline whitespace-nowrap">数据中心选择</span>
                           <span className="sm:hidden whitespace-nowrap">机房</span>
                         </span>
-                        <div className="flex gap-1.5 items-center flex-shrink-0">
+                        <div className="flex gap-1 items-center flex-shrink-0">
                           <button
                             onClick={() => checkAvailability(server.planCode)}
                             disabled={isCheckingAvailability || !isAuthenticated}
-                            className="px-2 py-1 bg-cyber-accent/10 hover:bg-cyber-accent/20 text-cyber-accent border border-cyber-accent/30 hover:border-cyber-accent/50 rounded-md text-[10px] font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 whitespace-nowrap flex-shrink-0"
+                            className="px-1.5 py-0.5 bg-cyber-accent/10 hover:bg-cyber-accent/20 text-cyber-accent border border-cyber-accent/30 hover:border-cyber-accent/50 rounded text-[9px] font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-0.5 whitespace-nowrap flex-shrink-0"
                           >
                             {isCheckingAvailability && selectedServer === server.planCode ? (
                               <>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-pulse flex-shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-pulse flex-shrink-0">
                                   <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
                                 </svg>
                                 查询中
                               </>
                             ) : (
                               <>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0">
                                   <circle cx="12" cy="12" r="10"></circle>
                                   <line x1="12" y1="16" x2="12" y2="12"></line>
                                   <line x1="12" y1="8" x2="12.01" y2="8"></line>
@@ -2015,10 +2004,10 @@ const ServersPage = () => {
                               addToMonitor(server, selectedDcs);
                             }}
                             disabled={!isAuthenticated}
-                            className="px-2 py-1 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border border-blue-500/40 hover:border-blue-500/60 rounded-md text-[10px] font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 whitespace-nowrap flex-shrink-0"
+                            className="px-1.5 py-0.5 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border border-blue-500/40 hover:border-blue-500/60 rounded text-[9px] font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-0.5 whitespace-nowrap flex-shrink-0"
                             title="添加到服务器监控"
                           >
-                            <Bell size={10} className="flex-shrink-0" />
+                            <Bell size={9} className="flex-shrink-0" />
                             监控
                           </button>
                           
@@ -2032,18 +2021,18 @@ const ServersPage = () => {
                               }
                             }}
                             disabled={!isAuthenticated || getSelectedDatacentersList(server.planCode).length === 0}
-                            className="relative px-3 py-1.5 bg-gradient-to-r from-cyber-primary to-cyber-primary-dark text-white border-2 border-cyber-primary/40 rounded-md text-[10px] font-bold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none flex items-center gap-1 animate-pulse-slow whitespace-nowrap flex-shrink-0"
+                            className="relative px-2 py-1 bg-gradient-to-r from-cyber-primary to-cyber-primary-dark text-white border border-cyber-primary/40 rounded text-[9px] font-bold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none flex items-center gap-0.5 animate-pulse-slow whitespace-nowrap flex-shrink-0"
                             style={{ animationDuration: '2s' }}
                           >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0">
                               <circle cx="9" cy="21" r="1"></circle>
                               <circle cx="20" cy="21" r="1"></circle>
                               <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
                             </svg>
                             <span className="tracking-wide">抢购</span>
-                            <span className="absolute -top-0.5 -right-0.5 flex h-3 w-3 pointer-events-none">
+                            <span className="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5 pointer-events-none">
                               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyber-accent opacity-75"></span>
-                              <span className="relative inline-flex rounded-full h-3 w-3 bg-cyber-primary"></span>
+                              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyber-primary"></span>
                             </span>
                           </button>
                         </div>
@@ -2076,9 +2065,9 @@ const ServersPage = () => {
                       </div>
                     </div>
                     
-                    {/* 数据中心列表 - Via浏览器极简优化版 */}
+                    {/* 数据中心列表 - 紧凑网格设计 */}
                     <div className="bg-slate-900/10 p-1.5">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-1.5">
                         {OVH_DATACENTERS
                           .filter(dc => {
                             const planCodeLower = server.planCode.toLowerCase();
@@ -2094,41 +2083,70 @@ const ServersPage = () => {
                               
                           let statusText = "查询中";
                           let statusColor = "rgb(250, 204, 21)";
+                          let borderColor = "border-yellow-500/30";
+                          let bgColor = "bg-yellow-500/5";
                               
                               if (availStatus === "unavailable") {
                             statusText = "不可用";
                             statusColor = "rgb(239, 68, 68)";
+                            borderColor = "border-red-500/30";
+                            bgColor = "bg-red-500/5";
                               } else if (availStatus && availStatus !== "unknown") {
                             statusText = availStatus.includes("H") ? availStatus : "可用";
                             statusColor = "rgb(74, 222, 128)";
+                            borderColor = "border-green-500/30";
+                            bgColor = "bg-green-500/5";
                               }
                               
                               return (
                                 <div 
                                   key={dcCode}
-                              className={`dc-item ${isSelected ? 'dc-item-selected' : 'dc-item-unselected'} flex items-center justify-between p-2 rounded cursor-pointer`}
+                              className={`dc-item group relative rounded-md cursor-pointer transition-all duration-200 border ${
+                                isSelected 
+                                  ? 'border-cyber-accent bg-cyber-accent/10 shadow-sm' 
+                                  : 'border-slate-700/50 bg-slate-800/40 hover:border-slate-600 hover:bg-slate-800/60'
+                              }`}
                                   onClick={(e) => toggleDatacenterSelection(server.planCode, dcCode, e)}
                               title={`${dc.name} (${dc.region}) - ${statusText}`}
                             >
-                              <div className="flex items-center gap-2 flex-1 min-w-0">
-                                <span className={`fi fi-${dc.countryCode.toLowerCase()} flex-shrink-0`} style={{ fontSize: '14px' }}></span>
-                                <div className="flex flex-col min-w-0 flex-1">
-                                  <span className="dc-code text-xs font-semibold truncate" style={{ color: isSelected ? 'rgb(100, 255, 218)' : 'rgb(241, 245, 249)' }}>{dcCode}</span>
-                                  <span className="dc-name text-[10px] truncate" style={{ color: isSelected ? 'rgb(203, 213, 225)' : 'rgb(148, 163, 184)' }}>{dc.name}</span>
+                              <div className="p-2 flex flex-col items-center text-center gap-1 relative">
+                                {/* 机房代码 */}
+                                <div className={`text-base font-bold tracking-wide ${
+                                  isSelected ? 'text-cyber-accent' : 'text-slate-200'
+                                }`}>
+                                  {dcCode}
+                                </div>
+                                
+                                {/* 机房名称 */}
+                                <div className={`text-[9px] truncate w-full ${
+                                  isSelected ? 'text-slate-300' : 'text-slate-400'
+                                }`}>
+                                  {dc.name}
+                                </div>
+                                
+                                {/* 状态指示器 */}
+                                <div className="flex items-center gap-1 mt-0.5">
+                                  <span 
+                                    className={`w-1.5 h-1.5 rounded-full ${
+                                      availStatus === "unavailable" ? 'animate-none' : 'animate-pulse'
+                                    }`}
+                                    style={{ backgroundColor: statusColor }}
+                                  ></span>
+                                  <span className="text-[8px]" style={{ color: statusColor }}>
+                                    {availStatus === "unknown" ? "..." : statusText}
+                                  </span>
                                 </div>
                               </div>
-                              <span className="text-[10px] font-medium flex-shrink-0 ml-2" style={{ color: statusColor, minWidth: '36px', textAlign: 'right' }}>
-                                {availStatus === "unknown" ? "⋯" : statusText}
-                              </span>
                                   
-                                  {isSelected && (
-                                <div className="dc-checkmark absolute top-1 right-1 w-4 h-4 rounded-full flex items-center justify-center" style={{ background: 'rgb(100, 255, 218)', pointerEvents: 'none' }}>
-                                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
+                              {/* 选中标记 */}
+                              {isSelected && (
+                                <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-cyber-accent flex items-center justify-center shadow-lg shadow-cyber-accent/50">
+                                  <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="rgb(15, 23, 42)" strokeWidth="3.5">
                                     <polyline points="20 6 9 17 4 12"></polyline>
                                   </svg>
                                 </div>
-                                  )}
-                                </div>
+                              )}
+                            </div>
                               );
                             })}
                           </div>

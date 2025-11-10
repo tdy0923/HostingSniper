@@ -107,10 +107,18 @@ const MonitorPage = () => {
                 if (ok) {
                   toast.success(`已自动下单：${sub.planCode}（${dc.toUpperCase()}）已加入队列`);
                 } else {
-                  toast.error(`自动下单失败：${sub.planCode}（${dc.toUpperCase()}）`);
+                  // 非成功但无异常时，统一静默，避免干扰
                 }
               })
-              .catch(() => {
+              .catch((err: any) => {
+                // 对于“指定机房无可定价配置（...）”的 400 错误，静默处理，不弹错误
+                const status = err?.response?.status;
+                const msg = (err?.response?.data as any)?.error || err?.message || '';
+                const isNoPriceForDc = status === 400 && typeof msg === 'string' && msg.includes('指定机房无可定价配置');
+                if (isNoPriceForDc) {
+                  return;
+                }
+                // 其他错误再提示
                 toast.error(`自动下单失败：${sub.planCode}（${dc.toUpperCase()}）`);
               });
             }

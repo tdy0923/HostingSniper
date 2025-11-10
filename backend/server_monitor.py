@@ -354,8 +354,82 @@ class ServerMonitor:
                         self.add_log("INFO", f"准备发送提醒: {plan_code}@{notif['dc']}{config_desc} - {notif['change_type']}", "monitor")
                         server_name = subscription.get("serverName")
                         
+                        # 计算从有货到无货的持续时长（仅在确实是从有货变无货时计算）
+                        duration_text = None
+                        # 只有当前状态是无货，且旧状态不是无货或None时，才是"从有货变无货"
+                        is_became_unavailable = (notif["change_type"] == "unavailable" and 
+                                                  notif.get("old_status") not in ["unavailable", None])
+                        if is_became_unavailable:
+                            try:
+                                last_available_ts = None
+                                same_config_display = config_info.get("display") if config_info else None
+                                history_list = subscription.get("history", [])
+                                self.add_log("INFO", f"[历时计算] {plan_code}@{notif['dc']} 从有货变无货，old_status={notif.get('old_status')}, 历史记录数: {len(history_list)}, 配置: {same_config_display}", "monitor")
+                                # 如果历史记录为空，尝试从同一轮检查的有货通知中获取时间戳
+                                # 注意：有货通知的历史记录已经在上面添加到 subscription["history"] 中
+                                # 从后向前查找最近一次相同机房（且相同配置显示文本时更精确）的 available 记录
+                                for entry in reversed(history_list):
+                                    if entry.get("datacenter") != notif["dc"]:
+                                        continue
+                                    if entry.get("changeType") != "available":
+                                        continue
+                                    if same_config_display:
+                                        cfg = entry.get("config", {})
+                                        if cfg and cfg.get("display") != same_config_display:
+                                            continue
+                                    last_available_ts = entry.get("timestamp")
+                                    if last_available_ts:
+                                        self.add_log("INFO", f"[历时计算] 找到有货记录: {plan_code}@{notif['dc']}, 时间: {last_available_ts}", "monitor")
+                                        break
+                                if last_available_ts:
+                                    try:
+                                        # 解析ISO时间，按北京时间计算时长（兼容无时区与带时区）
+                                        from datetime import datetime as _dt
+                                        try:
+                                            # 优先解析为带时区
+                                            start_dt = _dt.fromisoformat(last_available_ts.replace("Z", "+00:00"))
+                                        except Exception:
+                                            start_dt = _dt.fromisoformat(last_available_ts)
+                                        # 若解析为naive时间，视为北京时间
+                                        if start_dt.tzinfo is None:
+                                            try:
+                                                from zoneinfo import ZoneInfo
+                                                start_dt = start_dt.replace(tzinfo=ZoneInfo("Asia/Shanghai"))
+                                            except Exception:
+                                                # 退化：将其视为UTC+8
+                                                start_dt = start_dt
+                                        delta = self._now_beijing() - start_dt
+                                        total_sec = int(delta.total_seconds())
+                                        if total_sec < 0:
+                                            total_sec = 0
+                                        days = total_sec // 86400
+                                        rem = total_sec % 86400
+                                        hours = rem // 3600
+                                        minutes = (rem % 3600) // 60
+                                        seconds = rem % 60
+                                        if days > 0:
+                                            duration_text = f"历时 {days}天{hours}小时{minutes}分{seconds}秒"
+                                        elif hours > 0:
+                                            duration_text = f"历时 {hours}小时{minutes}分{seconds}秒"
+                                        elif minutes > 0:
+                                            duration_text = f"历时 {minutes}分{seconds}秒"
+                                        else:
+                                            duration_text = f"历时 {seconds}秒"
+                                        self.add_log("INFO", f"[历时计算] 计算成功: {plan_code}@{notif['dc']}, {duration_text}", "monitor")
+                                    except Exception as e:
+                                        self.add_log("WARNING", f"[历时计算] 计算异常: {plan_code}@{notif['dc']}, 错误: {str(e)}", "monitor")
+                                        duration_text = None
+                                else:
+                                    self.add_log("INFO", f"[历时计算] 未找到有货记录: {plan_code}@{notif['dc']}, 无法计算历时", "monitor")
+                            except Exception as e:
+                                self.add_log("WARNING", f"[历时计算] 查找异常: {plan_code}@{notif['dc']}, 错误: {str(e)}", "monitor")
+                                duration_text = None
+                        else:
+                            # 首次检查或无货通知，不计算历时
+                            pass
+                        
                         self.send_availability_alert(plan_code, notif["dc"], notif["status"], notif["change_type"], 
-                                                    config_info, server_name)
+                                                    config_info, server_name, duration_text=duration_text)
                         
                         # 添加到历史记录
                         if "history" not in subscription:

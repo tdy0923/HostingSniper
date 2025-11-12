@@ -4693,7 +4693,7 @@ def install_os(service_name):
         if data.get('useProxmox9Zfs'):
             add_log("INFO", f"🎯 使用 Proxmox 9 + ZFS 根文件系统预设", "server_control")
             
-            # 方案 C：ZFS 根 + ext4 boot + swap + /var/lib/vz（Proxmox 要求）
+            # 方案 B：ZFS 根使用全部剩余空间（/var/lib/vz 作为 ZFS dataset）
             install_params['storage'] = [
                 {
                     'diskGroupId': 0,
@@ -4715,17 +4715,6 @@ def install_os(service_name):
                                 'fileSystem': 'zfs',
                                 'mountPoint': '/',
                                 'raidLevel': 1,
-                                'size': 51200,  # 50GB for root
-                                'extras': {
-                                    'zp': {
-                                        'name': 'rpool'
-                                    }
-                                }
-                            },
-                            {
-                                'fileSystem': 'zfs',
-                                'mountPoint': '/var/lib/vz',
-                                'raidLevel': 1,
                                 'size': 0,  # 剩余所有空间
                                 'extras': {
                                     'zp': {
@@ -4737,7 +4726,7 @@ def install_os(service_name):
                     }
                 }
             ]
-            add_log("INFO", f"✅ ZFS 配置: /boot (ext4 1GB) + swap (8GB) + / (ZFS 50GB) + /var/lib/vz (ZFS 剩余空间) - 全部 RAID1", "server_control")
+            add_log("INFO", f"✅ ZFS 配置: /boot (ext4 1GB RAID1) + swap (8GB RAID1) + / (ZFS rpool 剩余空间 RAID1)", "server_control")
         
         # 自定义存储配置 - OVH API格式的storage数组
         elif data.get('storageConfig'):

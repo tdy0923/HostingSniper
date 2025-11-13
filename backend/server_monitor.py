@@ -298,22 +298,15 @@ class ServerMonitor:
                                         "notifications_to_send": notifications_to_send,
                                         "price_text": None
                                     }
-                            else:
-                                # 没有有货的数据中心，不需要查询价格
-                                config_results[config_key] = {
-                                    "config_info": config_info,
-                                    "notifications_to_send": notifications_to_send,
-                                    "price_text": None
-                                }
                         else:
-                            # 没有通知需要发送，不需要查询价格
+                            # 没有有货的数据中心，不需要查询价格
                             config_results[config_key] = {
                                 "config_info": config_info,
                                 "notifications_to_send": notifications_to_send,
                                 "price_text": None
                             }
                     else:
-                        # 没有通知需要发送
+                        # 没有通知需要发送，不需要查询价格
                         config_results[config_key] = {
                             "config_info": config_info,
                             "notifications_to_send": notifications_to_send,
